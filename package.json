@@ -1,0 +1,52 @@
+{
+	"name": "aura2lwc",
+	"displayName": "Aura2LWC - Convert Aura Lightning Components to Lightning Web Components",
+	"description": "Converts Aura Components to LWC on the Fly",
+	"publisher": "BuildLoop LLC",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.37.0"
+	},
+	"categories": [
+		"Formatters"
+	],
+	"activationEvents": [
+		"onCommand:extension.aura2lwc"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.aura2lwc",
+				"title": "Convert Aura to LWC"
+			}
+		],
+		"menus": {
+			"explorer/context": [{
+				"when": "explorerResourceIsFolder",
+				"command": "extension.aura2lwc",
+				"group": "7_modification"
+			}],
+			"commandPalette": [
+				{
+					"command": "extension.aura2lwc",
+					"when": "false"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"test": "node ./test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^5.2.6",
+		"@types/node": "^10.12.21",
+		"@types/vscode": "^1.37.0",
+		"eslint": "^5.13.0",
+		"glob": "^7.1.4",
+		"mocha": "^6.1.4",
+		"typescript": "^3.3.1",
+		"vscode-test": "^1.2.0"
+	}
+}
