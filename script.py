@@ -260,3 +260,13 @@ for file in files:
 	meta += "</LightningComponentBundle>"
 	with open(lwcpath+dirName+'/'+dirName+'.js-meta', 'w') as fileCss:
 				fileCss.write(meta)
+	
+	#### Create the jsconfig.json
+	if not os.path.exists(lwcpath+"jsconfig.json"):
+		jsconfig = ""
+		jsconfig += "{\n\t\"compilerOptions\": {\n\t\t\"baseUrl\": \".\",\n\t\t\"paths\": {\n"
+		jsconfig += "\t\t\t\"c/"+dirName+"\":[\""+dirName+"/"+dirName+".js\"],\n"
+		jsconfig += "\t\t},\n\t\t\"experimentalDecorators\": true\n\t},\n"
+		jsconfig += "\t\"include\": [\n\t\t\"**/*\",\n\t\t\"../../../../.sfdx/typings/lwc/**/*.d.ts\"\n\t]\n}"
+		with open(lwcpath+"jsconfig.json", 'w') as fileJSConfig:
+			fileJSConfig.write(jsconfig)

@@ -14,7 +14,8 @@ function activate(context) {
 		if (data.fsPath.split('/').length > 1) {
 			let root = data.fsPath.split('/')[data.fsPath.split('/').length - 2];
 			if(root.toLowerCase() === 'aura'){
-				let pythonPath = path.resolve(__dirname, "script.pyo");
+				// pyo in prod
+				let pythonPath = path.resolve(__dirname, "script.py");
 				cp.exec('python '+pythonPath+' -i '+data.fsPath +' -o '+vscode.workspace.rootPath, (err, stdout, stderr) => {
 					//console.log('stdout: ' + stdout);
 					//console.log('stderr: ' + stderr);
