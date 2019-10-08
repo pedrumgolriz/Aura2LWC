@@ -10,7 +10,7 @@ import re
 import ast
 from elevate import elevate
 from bs4 import BeautifulSoup
-
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input')
@@ -66,7 +66,7 @@ recordId = False
 #start conversion file by file
 files.sort()
 for file in files:
-	print "Converting " + file + " from Aura to LWC"
+	#print "Converting " + file + " from Aura to LWC"
 	#conversion of cmp
 	if file.endswith('.cmp'):
 		with open(file, "r") as comp:
@@ -75,6 +75,7 @@ for file in files:
 			if pq('component').attr(targetsRgx):
 				targets = pq('component').attr(targetsRgx).split(',')
 			fixedTargets = []
+			#convert aura implements into lwc meta targets
 			for target in targets:
 				if(target.strip() == 'force:appHostable'):
 					fixedTargets.append("lightning__AppPage")
@@ -262,11 +263,23 @@ for file in files:
 				fileCss.write(meta)
 	
 	#### Create the jsconfig.json
+	jsconfig = ""
 	if not os.path.exists(lwcpath+"jsconfig.json"):
-		jsconfig = ""
 		jsconfig += "{\n\t\"compilerOptions\": {\n\t\t\"baseUrl\": \".\",\n\t\t\"paths\": {\n"
-		jsconfig += "\t\t\t\"c/"+dirName+"\":[\""+dirName+"/"+dirName+".js\"],\n"
+		jsconfig += "\t\t\t\"c/"+dirName+"\":[\""+dirName+"/"+dirName+".js\"]\n"
 		jsconfig += "\t\t},\n\t\t\"experimentalDecorators\": true\n\t},\n"
 		jsconfig += "\t\"include\": [\n\t\t\"**/*\",\n\t\t\"../../../../.sfdx/typings/lwc/**/*.d.ts\"\n\t]\n}"
 		with open(lwcpath+"jsconfig.json", 'w') as fileJSConfig:
 			fileJSConfig.write(jsconfig)
+	else:
+		with open(lwcpath+"jsconfig.json", "r+") as jsconfigjson:
+#			jsconfig = jsconfigjson.read()
+			jsconfig = json.load(jsconfigjson)
+			paths = jsconfig["compilerOptions"]["paths"]
+			#if not in paths
+			paths["c/"+dirName] = [dirName+"/"+dirName+".js"]
+			#write to jsconfig.json
+			jsconfig["compilerOptions"]["paths"] = paths
+			config = json.dumps(jsconfig, indent=4)
+		with open(lwcpath+"jsconfig.json", "w") as writejson:
+			writejson.write(config)
