@@ -64,11 +64,19 @@ partialsRgx = ""
 #has default @api recordid
 recordId = False
 #start conversion file by file
+componentDone = False
+controllerDone = False
+cssDone = False
+helperDone = False
+rendererDone = False
+metaDone = False
+configDone = False
+
 files.sort()
 for file in files:
 	#print "Converting " + file + " from Aura to LWC"
 	#conversion of cmp
-	if file.endswith('.cmp'):
+	if file.endswith('.cmp') and componentDone != True:
 		with open(file, "r") as comp:
 			pq = PyQuery(str(comp.read()))
 			#store the following in targets
@@ -147,32 +155,67 @@ for file in files:
 					handlers.append({'name': handlerName, 'value': handlerValue, 'action': handlerAction})
 
 			#known html elements
-			html = ["a","abbr","address","area","article","aside","audio","b","bdi","bdo","blockquote","body","br","button","canvas","caption","cite","code","col","colgroup","command","datalist","dd","del","details","dfn","div","dl","dt","em","embed","fieldset","figcaption","figure","footer","form","h1","h2","h3","h4","h5","h6","header","hr","html","i","iframe","img","input","ins","kbd","keygen","label","legend","li","main","map","mark","menu","meter","nav","object","ol","optgroup","option","output","p","param","pre","progress","q","rp","rt","ruby","s","samp","section","select","small","source","span","strong","sub","summary","sup","table","tbody","td","textarea","tfoot","th","thead","time","tr","track","u","ul","var","video","wbr"]
+			html = ["a","abbr","address","area","article","aside","audio","b","bdi","bdo","blockquote","body","br","button","canvas","caption","cite","code","col","colgroup","command","datalist","dd","del","details","dfn","div","dl","dt","em","embed","fieldset","figcaption","figure","footer","form","h1","h2","h3","h4","h5","h6","header","hr","html","i","iframe","img","input","ins","kbd","keygen","label","legend","li","link","main","map","mark","menu","meter","nav","object","ol","optgroup","option","output","p","param","pre","progress","q","rp","rt","ruby","s","samp","section","select","small","source","span","strong","sub","summary","sup","table","tbody","td","textarea","tfoot","th","thead","time","tr","track","u","ul","var","video","wbr"]
 			#known lightning elements (should work as is)
 			knownLightningElements = ["buttonGroup", "buttonIcon", "buttonIconStateful", "buttonMenu", "menuItem", "menuDivider", "menuSubheader", "buttonStateful", "insertImageButton", "inputAddress", "checkboxGroup", "compbox", "dualListbox", "fileUpload", "fileCard", "input", "inputField", "inputName", "inputLocation", "radioGroup", "slider", "inputRichText", "formattedAddress", "clickToDial", "formattedDateTime", "formattedEmail", "formattedLocation", "formattedName", "formattedNumber", "outputField", "formattedPhone", "formattedRichText", "formattedText", "formattedTime", "formattedUrl", "relativeDateTime", "recordEditForm", "recordForm", "recordViewForm", "accordion", "accordionSection", "card", "carousel", "layout", "layoutItem", "tab", "tabset", "tile", "breadcrumb", "breadcrumbs", "navigation", "tree", "verticalNavigation", "verticalNavigationItem", "verticalNavigationItemBadge", "verticalNavigationItemIcon", "verticalNavigationOverflow", "verticalNavigationSection", "avatar", "badge", "datatable", "dynamicIcon", "helptext", "icon", "listView", "overlayLibrary", "notificationsLibrary", "path", "picklistPath", "pill", "pillContainer", "progressBar", "progressIndicator", "treeGrid", "spinner"]
 			#aura elements
 			knownAuraElements = ["if", "set", "iteration", "renderIf", "template", "text", "unescapedHtml", "component", "attribute", "handler"]
-
+			knownUIElements = ["outputText"]
+			
 			# start the conversion process
 			view = str(pq)
 			view = re.sub(r'<component(.|\n)*?>','',view)
 			view = re.sub(r'<attribute(.|\n)*?>','',view)
 			view = re.sub(r'<handler(.|\n)*?>','',view)
 			view = re.sub(r'\s+', ' ', view)
-			view = re.sub(r':', '-', view)
+			# variables
+
+			view = BeautifulSoup(view, "html.parser").prettify()
+			
+			#check for inline styles and add to random class in css and add class to element
 			controllerAttrs = list(re.finditer(r'\"{!(.*?)*..|}\"', view))
-			for sub in controllerAttrs:
-				if sub.group(0).find('{') > -1:
-					view = re.sub(sub.group(0), '{', view, 1)
-				else:
-					view = re.sub(sub.group(0), '}', view, 1)
 			
 			for el in pq('*'):
-				if not el.tag in html and not el.tag in knownLightningElements and not el.tag in knownAuraElements:
-					view = re.sub(el.tag, 'c-'+el.tag, view)
+				if not el.tag in map(str.lower, html) and not el.tag in map(str.lower, knownLightningElements) and not el.tag in map(str.lower, knownAuraElements) and not el.tag in map(str.lower, knownUIElements):
+					view = re.sub(el.tag, 'c-'+el.tag, view, 1)
+				if el.tag in map(str.lower, knownUIElements):
+					matchedTag = ""
+					for s in knownUIElements:
+						if el.tag == s.lower():
+							splitTags = re.sub( r"([A-Z])", r" \1", s, 1).split()
+							matchedTag = '-'.join(splitTags)
+							break
+					if matchedTag != "":
+						view = re.sub("<"+el.tag, '<ui-'+matchedTag, view, 1)
+				if el.tag in map(str.lower, knownLightningElements):
+					matchedTag = ""
+					for s in knownLightningElements:
+						if el.tag == s.lower():
+							splitTags = re.sub( r"([A-Z])", r" \1", s, 1).split()
+							matchedTag = '-'.join(splitTags)
+							break
+					if matchedTag != "":
+						view = re.sub("<"+el.tag, '<lightning-'+matchedTag, view, 1)
+
+			#has to be nested since view changes each time
+			for x in re.finditer('"{![A-z](.*?)}"', view):
+				for match in re.finditer('"{![A-z](.*?)}"', view):
+					tempMatch = match.group(1).split('.', 1)[1]
+					if not(")" in tempMatch or "(" in tempMatch or "||" in tempMatch or "&&" in tempMatch or "?" in tempMatch or ":" in tempMatch):
+						splitView1, splitView2 = view[:match.start()], view[match.end():]
+						view = splitView1 + "{" + tempMatch + "}" + splitView2
+						break
+ 			####TODO VIEW ITEMS####
+
+			#change any !$Resource to static resource reference
+			#aura:repeat to lwc format
+			#change aura:if true/false to if:true/false
+				#if aura:set attribute="else", change to opposite of above
+			#change inline conditionals to controller conditionals in rendered callback
+			#change UI:* to lightning-* (all conversions)
 
 			view = re.sub(r'</component>', '', view)
-			view = "<template>"+view+"</template>"
+			view = "<template>\n"+view+"</template>"
 			print "LWC View Successfully generated!"
 				
 			#make the new html file
@@ -181,9 +224,10 @@ for file in files:
 			if not os.path.exists(lwcpath+dirName):
 				os.mkdir(lwcpath+dirName)
 			with open(lwcpath+dirName+'/'+dirName+'.html', 'w') as filed:
-				filed.write(BeautifulSoup(view, "html.parser").prettify())
+				filed.write(view)
+				componentDone = True
 	#conversion of css
-	if file.endswith('.css'):
+	if file.endswith('.css') and cssDone != True:
 		with open(file, "r") as comp:
 			comp = re.sub(r'.THIS', '', str(comp.read()))
 		numDir = file.split('/', 100)
@@ -192,32 +236,49 @@ for file in files:
 				os.mkdir(lwcpath+dirName)
 		with open(lwcpath+dirName+'/'+dirName+'.css', 'w') as fileCss:
 				fileCss.write(comp)
+				cssDone = True
 		print "LWC CSS Generated Successfully!"
-	if ("controller.js" in file.lower()):
+	if ("controller.js" in file.lower() and controllerDone != True):
 		controllerjs = ""
 		#import any apex page needed
 		controllerjs += "import { LightningElement, api, track, wire } from 'lwc'\n"
 		controllerjs += "export default class "+dirName[0].upper()+dirName[1:]+" extends LightningElement {\n"
 
-		# TODO: before we can add apex, we need to find any cmp.get('c.') and add the method to the import
+		# TODO: find any cmp.get('c.') and add the method to the import
 		with open(file, "r") as comp:
+			print "###COMP###"
+			jsoncontroller = comp.read()
+			jsoncontroller = jsoncontroller[1:]
+			jsoncontroller = jsoncontroller[:-1]
+			jsoncontroller = jsoncontroller.strip()
+			jsoncontroller = re.sub("([A-Za-z]+.(?=\:))", r'"\1"', jsoncontroller)
+			jsoncontroller = re.sub("(?::)[ \t]+(?:function)([^\)]+)\)", ':', jsoncontroller)
+			jsoncontroller = re.sub(";", ",", jsoncontroller)
 			comp = str(comp.read())
 			comp = comp.replace(comp[0:2], '[')
 			comp = comp.replace(comp[-2:], ']')
 			comp = re.sub(r":..*(function)(?=\()(.*)(?=\))(\))", ':', comp)
 			comp = re.sub("\n", '', comp)
-			comp = re.sub(' +', ' ',comp)
-			#comp = ast.literal_eval(comp)
-			#print comp
-			#print comp.strip('][').split(', ') 
+			comp = re.sub(' +', ' ',comp) 
 
+		# For now setting all tracked variables to those with defualt values and those without to @api
 		for attr in attributes:
 			if(attr['description'] != ""):
 				controllerjs += "\t// "+attr['description'] + '\n'
-			controllerjs += "\t@track "+attr['name']
 			if(attr['default'] != ""):
-				controllerjs += " = "+attr['default'] + ";\n"
+				controllerjs += "\t@track "+attr['name']
+				print attr['type']
+				if(attr['type'] == "String"):
+					controllerjs += " = \""+attr['default'] + "\";\n"
+				elif("[]" in attr['type']):
+					if(attr['type'] == "String[]"):
+						controllerjs += " = [" + "\""+attr['default'] +"\"" + "];\n"
+					else:
+						controllerjs += " = [" + attr['default'] + "];\n"
+				else:
+					controllerjs += " = "+attr['default'] + ";\n"
 			else:
+				controllerjs += "\t@api "+attr['name']
 				controllerjs += ";\n"
 		if recordId:
 			controllerjs += "\t@api recordId;\n"
@@ -228,7 +289,7 @@ for file in files:
 				controllerjs += "\trenderedCallback(){}\n"
 
 		print "####APEX####"
-		print apex
+		#print apex
 
 		controllerjs += "}"
 
@@ -239,47 +300,57 @@ for file in files:
 		#if controller exists, we must append functions
 		with open(lwcpath+dirName+'/'+dirName+'.js', 'w') as fileCss:
 				fileCss.write(controllerjs)
+				controllerDone = True
 		print "LWC Controller Generated Successfully!"
 
 	#if ("helper.js" in file.lower()):
+	# TODO: find any cmp.get('c.') and add the method to the import
+
+	# if renderer.js in file.lower():
+	# TODO: add to renderedcallback and ignore this.superafterrender and add only javascript lines
+
 	#create the meta
-	if not os.path.exists(lwcpath+dirName):
-		os.mkdir(lwcpath+dirName)
-	meta = ""
-	#add meta lines
-	meta += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-	meta += "<LightningComponentBundle xmlns=\"http://soap.sforce.com/2006/04/metadata\" fqn=\""+dirName+"\">\n"
-	meta += "\t<apiVersion>46.0</apiVersion>\n"
-	if access != "":
-		meta += "\t<isExposed>true</isExposed>\n"
-	else:
-		meta += "\t\t<isExposed>true</isExposed>\n"
-	meta += "\t<targets>\n"
-	for target in targets:
-		meta += "\t\t<target>"+target+"</target>\n"
-	meta += "\t</targets>\n"
-	meta += "</LightningComponentBundle>"
-	with open(lwcpath+dirName+'/'+dirName+'.js-meta', 'w') as fileCss:
-				fileCss.write(meta)
+	if metaDone != True:
+		if not os.path.exists(lwcpath+dirName):
+			os.mkdir(lwcpath+dirName)
+		meta = ""
+		#add meta lines
+		meta += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+		meta += "<LightningComponentBundle xmlns=\"http://soap.sforce.com/2006/04/metadata\" fqn=\""+dirName+"\">\n"
+		meta += "\t<apiVersion>46.0</apiVersion>\n"
+		if access != "":
+			meta += "\t<isExposed>true</isExposed>\n"
+		else:
+			meta += "\t\t<isExposed>true</isExposed>\n"
+		meta += "\t<targets>\n"
+		for target in targets:
+			meta += "\t\t<target>"+target+"</target>\n"
+		meta += "\t</targets>\n"
+		meta += "</LightningComponentBundle>"
+		with open(lwcpath+dirName+'/'+dirName+'.js-meta', 'w') as fileCss:
+					fileCss.write(meta)
+					metaDone = True
 	
 	#### Create the jsconfig.json
-	jsconfig = ""
-	if not os.path.exists(lwcpath+"jsconfig.json"):
-		jsconfig += "{\n\t\"compilerOptions\": {\n\t\t\"baseUrl\": \".\",\n\t\t\"paths\": {\n"
-		jsconfig += "\t\t\t\"c/"+dirName+"\":[\""+dirName+"/"+dirName+".js\"]\n"
-		jsconfig += "\t\t},\n\t\t\"experimentalDecorators\": true\n\t},\n"
-		jsconfig += "\t\"include\": [\n\t\t\"**/*\",\n\t\t\"../../../../.sfdx/typings/lwc/**/*.d.ts\"\n\t]\n}"
-		with open(lwcpath+"jsconfig.json", 'w') as fileJSConfig:
-			fileJSConfig.write(jsconfig)
-	else:
-		with open(lwcpath+"jsconfig.json", "r+") as jsconfigjson:
-#			jsconfig = jsconfigjson.read()
-			jsconfig = json.load(jsconfigjson)
-			paths = jsconfig["compilerOptions"]["paths"]
-			#if not in paths
-			paths["c/"+dirName] = [dirName+"/"+dirName+".js"]
-			#write to jsconfig.json
-			jsconfig["compilerOptions"]["paths"] = paths
-			config = json.dumps(jsconfig, indent=4)
-		with open(lwcpath+"jsconfig.json", "w") as writejson:
-			writejson.write(config)
+	if configDone != True:
+		jsconfig = ""
+		if not os.path.exists(lwcpath+"jsconfig.json"):
+			jsconfig += "{\n\t\"compilerOptions\": {\n\t\t\"baseUrl\": \".\",\n\t\t\"paths\": {\n"
+			jsconfig += "\t\t\t\"c/"+dirName+"\":[\""+dirName+"/"+dirName+".js\"]\n"
+			jsconfig += "\t\t},\n\t\t\"experimentalDecorators\": true\n\t},\n"
+			jsconfig += "\t\"include\": [\n\t\t\"**/*\",\n\t\t\"../../../../.sfdx/typings/lwc/**/*.d.ts\"\n\t]\n}"
+			with open(lwcpath+"jsconfig.json", 'w') as fileJSConfig:
+				fileJSConfig.write(jsconfig)
+		else:
+			with open(lwcpath+"jsconfig.json", "r+") as jsconfigjson:
+				#jsconfig = jsconfigjson.read()
+				jsconfig = json.load(jsconfigjson)
+				paths = jsconfig["compilerOptions"]["paths"]
+				#if not in paths
+				paths["c/"+dirName] = [dirName+"/"+dirName+".js"]
+				#write to jsconfig.json
+				jsconfig["compilerOptions"]["paths"] = paths
+				config = json.dumps(jsconfig, indent=4)
+			with open(lwcpath+"jsconfig.json", "w") as writejson:
+				writejson.write(config)
+				configDone = True
