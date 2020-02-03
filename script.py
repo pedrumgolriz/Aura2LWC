@@ -18,6 +18,7 @@ parser.add_argument('-o', '--output')
 args = parser.parse_args()
 path = args
 files = []
+controllerjs = ""
 
 lwcPath = ""
 
@@ -178,16 +179,16 @@ for file in files:
 			for el in pq('*'):
 				if not el.tag in map(str.lower, html) and not el.tag in map(str.lower, knownLightningElements) and not el.tag in map(str.lower, knownAuraElements) and not el.tag in map(str.lower, knownUIElements):
 					view = re.sub(el.tag, 'c-'+el.tag, view, 1)
-				if el.tag in map(str.lower, knownUIElements):
-					matchedTag = ""
-					for s in knownUIElements:
-						if el.tag == s.lower():
-							splitTags = re.sub( r"([A-Z])", r" \1", s, 1).split()
-							matchedTag = '-'.join(splitTags)
-							break
-					if matchedTag != "":
-						view = re.sub("<"+el.tag, '<ui-'+matchedTag, view, 1)
-				if el.tag in map(str.lower, knownLightningElements):
+				# if el.tag in map(str.lower, knownUIElements):
+				# 	matchedTag = ""
+				# 	for s in knownUIElements:
+				# 		if el.tag == s.lower():
+				# 			splitTags = re.sub( r"([A-Z])", r" \1", s, 1).split()
+				# 			matchedTag = '-'.join(splitTags)
+				# 			break
+				# 	if matchedTag != "":
+				# 		view = re.sub("<"+el.tag, '<ui-'+matchedTag, view, 1)
+				# if el.tag in map(str.lower, knownLightningElements):
 					matchedTag = ""
 					for s in knownLightningElements:
 						if el.tag == s.lower():
@@ -197,6 +198,7 @@ for file in files:
 					if matchedTag != "":
 						view = re.sub("<"+el.tag, '<lightning-'+matchedTag, view, 1)
 
+			#replace all !v values with 
 			#has to be nested since view changes each time
 			for x in re.finditer('"{![A-z](.*?)}"', view):
 				for match in re.finditer('"{![A-z](.*?)}"', view):
@@ -205,6 +207,20 @@ for file in files:
 						splitView1, splitView2 = view[:match.start()], view[match.end():]
 						view = splitView1 + "{" + tempMatch + "}" + splitView2
 						break
+			for x in re.finditer('{![A-z](.*?)}', view):
+				for match in re.finditer('{![A-z](.*?)}', view):
+					tempMatch = match.group(1).split('.', 1)[1]
+					if not(")" in tempMatch or "(" in tempMatch or "||" in tempMatch or "&&" in tempMatch or "?" in tempMatch or ":" in tempMatch):
+						splitView1, splitView2 = view[:match.start()], view[match.end():]
+						view = splitView1 + "{" + tempMatch + "}" + splitView2
+						break
+			for y in re.finditer('"{!\$[A-z]esource(.*?)}"', view):
+				for match in re.finditer('"{!\$[A-z]esource(.*?)}"', view):
+					tempMatch = match.group(1).split('.', 1)[1]
+					splitView1, splitView2 = view[:match.start()], view[match.end():]
+					view = splitView1 + "{" + tempMatch + "}" + splitView2
+					controllerjs += "\nimport " + tempMatch + " from '@salesforce/resourceUrl/"+ tempMatch +"';"
+					break
  			####TODO VIEW ITEMS####
 
 			#change any !$Resource to static resource reference
@@ -239,9 +255,8 @@ for file in files:
 				cssDone = True
 		print "LWC CSS Generated Successfully!"
 	if ("controller.js" in file.lower() and controllerDone != True):
-		controllerjs = ""
 		#import any apex page needed
-		controllerjs += "import { LightningElement, api, track, wire } from 'lwc'\n"
+		controllerjs += "\nimport { LightningElement, api, track, wire } from 'lwc'\n"
 		controllerjs += "export default class "+dirName[0].upper()+dirName[1:]+" extends LightningElement {\n"
 
 		# TODO: find any cmp.get('c.') and add the method to the import
