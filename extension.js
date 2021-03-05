@@ -16,7 +16,7 @@ function activate(context) {
 			if(root.toLowerCase() === 'aura'){
 				// pyo in prod
 				let pythonPath = path.resolve(__dirname, "script.py");
-				cp.exec('python '+pythonPath+' -i '+data.fsPath +' -o '+vscode.workspace.rootPath, (err, stdout, stderr) => {
+				cp.exec('python3 '+pythonPath+' -i '+data.fsPath +' -o '+vscode.workspace.rootPath, (err, stdout, stderr) => {
 					//console.log('stdout: ' + stdout);
 					//console.log('stderr: ' + stderr);
 					if (err) {

@@ -22,10 +22,10 @@ controllerjs = ""
 
 lwcPath = ""
 
-print "######"
-print path.input
-print path.output
-print "######"
+print ("######")
+print (path.input)
+print (path.output)
+print ("######")
 
 for r, d, f in os.walk(path.input):
 	for file in f:
@@ -34,9 +34,9 @@ for r, d, f in os.walk(path.input):
 			files.append(os.path.join(r, file))
 			#create folder LWC if not already exists
 		
-lwcpath = path.output +"/lwc/"
-os.umask(0002)
-print "Checking if lwc folder exists: " + str(os.path.exists(lwcpath)) 
+lwcpath = path.output +"/force-app/main/default/lwc/"
+os.umask(int('0002'))
+print ("Checking if lwc folder exists: " + str(os.path.exists(lwcpath)))
 #elevate()
 if not os.path.exists(lwcpath):
 	os.mkdir(lwcpath)
@@ -98,14 +98,14 @@ for file in files:
 					fixedTargets.append('lightningCommunity__Page')
 			targets = fixedTargets
 				
-			print 'Targets: '+str(targets)
+			print ('Targets: '+str(targets))
 			#store apex controller
 			if pq('component').attr(apexRgx):
 				apex = pq('component').attr(apexRgx)
 			#store the folloiwing in access
 			if pq('component').attr(accessRgx):
 				access = pq('component').attr(accessRgx).lower()
-			print 'Access type: '+access 
+			print ('Access type: '+access)
 			#store the following in attributes
 			if pq('attribute'):
 				attributesArray = pq('attribute')
@@ -128,13 +128,13 @@ for file in files:
 						attributeRequired = attribute.attr('required')
 					if attribute.attr('description'):
 						attributeDescription = attribute.attr('description')
-					print "Attribute Name: " + str(attributeName)
-					print "Attribute Type: " + str(attributeType)
-					print "Attribute Access: " + str(attributeAccess)
-					print "Attribute Default: " + str(attributeDefault)
-					print "Attribute Required: " + str(attributeRequired)
-					print "Attribute description: " + str(attributeDescription)
-					print "\n"
+					print ("Attribute Name: " + str(attributeName))
+					print ("Attribute Type: " + str(attributeType))
+					print ("Attribute Access: " + str(attributeAccess))
+					print ("Attribute Default: " + str(attributeDefault))
+					print ("Attribute Required: " + str(attributeRequired))
+					print ("Attribute description: " + str(attributeDescription))
+					print ("\n")
 					attributes.append({'name': attributeName, 'type': attributeType, 'access': attributeAccess, 'default': attributeDefault, 'required': attributeRequired, 'description': attributeDescription})
 
 			if pq('handler'):
@@ -149,10 +149,10 @@ for file in files:
 						handlerValue = handler.attr('value')
 					if handler.attr('action'):
 						handlerAction = handler.attr('action')
-					print "Handler Name: " + str(handlerName)
-					print "Handler Value: " + str(handlerValue)
-					print "Handler Action: " + str(handlerAction)
-					print "\n"
+					print ("Handler Name: " + str(handlerName))
+					print ("Handler Value: " + str(handlerValue))
+					print ("Handler Action: " + str(handlerAction))
+					print ("\n")
 					handlers.append({'name': handlerName, 'value': handlerValue, 'action': handlerAction})
 
 			#known html elements
@@ -232,7 +232,7 @@ for file in files:
 
 			view = re.sub(r'</component>', '', view)
 			view = "<template>\n"+view+"</template>"
-			print "LWC View Successfully generated!"
+			print ("LWC View Successfully generated!")
 				
 			#make the new html file
 			numDir = file.split('/', 100)
@@ -253,7 +253,7 @@ for file in files:
 		with open(lwcpath+dirName+'/'+dirName+'.css', 'w') as fileCss:
 				fileCss.write(comp)
 				cssDone = True
-		print "LWC CSS Generated Successfully!"
+		print ("LWC CSS Generated Successfully!")
 	if ("controller.js" in file.lower() and controllerDone != True):
 		#import any apex page needed
 		controllerjs += "\nimport { LightningElement, api, track, wire } from 'lwc'\n"
@@ -261,7 +261,7 @@ for file in files:
 
 		# TODO: find any cmp.get('c.') and add the method to the import
 		with open(file, "r") as comp:
-			print "###COMP###"
+			print ("###COMP###")
 			jsoncontroller = comp.read()
 			jsoncontroller = jsoncontroller[1:]
 			jsoncontroller = jsoncontroller[:-1]
@@ -282,7 +282,7 @@ for file in files:
 				controllerjs += "\t// "+attr['description'] + '\n'
 			if(attr['default'] != ""):
 				controllerjs += "\t@track "+attr['name']
-				print attr['type']
+				print (attr['type'])
 				if(attr['type'] == "String"):
 					controllerjs += " = \""+attr['default'] + "\";\n"
 				elif("[]" in attr['type']):
@@ -303,7 +303,7 @@ for file in files:
 			if hndlr['name'].strip() == 'render':
 				controllerjs += "\trenderedCallback(){}\n"
 
-		print "####APEX####"
+		print("####APEX####")
 		#print apex
 
 		controllerjs += "}"
@@ -316,7 +316,7 @@ for file in files:
 		with open(lwcpath+dirName+'/'+dirName+'.js', 'w') as fileCss:
 				fileCss.write(controllerjs)
 				controllerDone = True
-		print "LWC Controller Generated Successfully!"
+		print ("LWC Controller Generated Successfully!")
 
 	#if ("helper.js" in file.lower()):
 	# TODO: find any cmp.get('c.') and add the method to the import
