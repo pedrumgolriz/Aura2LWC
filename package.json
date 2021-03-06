@@ -7,7 +7,7 @@
 		"type": "git",
 		"url": "https://github.com/pedrumgolriz/Aura2LWC"
 	},
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"galleryBanner": {
         "color": "#0000FF",
         "theme": "dark"
@@ -19,7 +19,7 @@
 		"Formatters",
 		"Programming Languages"
 	],
-	"icon": "./icon.png",
+	"icon": "icon.png",
 	"activationEvents": [
 		"onCommand:extension.aura2lwc"
 	],
