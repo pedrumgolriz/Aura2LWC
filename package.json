@@ -3,14 +3,23 @@
 	"displayName": "Aura2LWC - Convert Aura Lightning Components to Lightning Web Components",
 	"description": "Converts Aura Components to LWC on the Fly",
 	"publisher": "BuildLoop",
-	"repository": "https://github.com/pedrumgolriz/Aura2LWC",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/pedrumgolriz/Aura2LWC"
+	},
 	"version": "0.0.5",
+	"galleryBanner": {
+        "color": "#0000FF",
+        "theme": "dark"
+    },
 	"engines": {
 		"vscode": "^1.37.0"
 	},
 	"categories": [
-		"Formatters"
+		"Formatters",
+		"Programming Languages"
 	],
+	"icon": "./icon.png",
 	"activationEvents": [
 		"onCommand:extension.aura2lwc"
 	],
