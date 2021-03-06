@@ -360,11 +360,13 @@ for file in files:
 			with open(lwcpath+"jsconfig.json", "r+") as jsconfigjson:
 				#jsconfig = jsconfigjson.read()
 				jsconfig = json.load(jsconfigjson)
-				paths = jsconfig["compilerOptions"]["paths"]
+				print ("jsconfig")
+				#print (jsconfig['paths'])
+				paths = jsconfig['paths']
 				#if not in paths
 				paths["c/"+dirName] = [dirName+"/"+dirName+".js"]
 				#write to jsconfig.json
-				jsconfig["compilerOptions"]["paths"] = paths
+				jsconfig["paths"] = paths
 				config = json.dumps(jsconfig, indent=4)
 			with open(lwcpath+"jsconfig.json", "w") as writejson:
 				writejson.write(config)
